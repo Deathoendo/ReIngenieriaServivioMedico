@@ -1,0 +1,154 @@
+<c-container class="px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h1 class="h3 mb-1">Consultas médicas</h1>
+      <p class="text-body-secondary mb-0">Busca por cédula, modalidad o fecha</p>
+    </div>
+    <a cButton color="primary" routerLink="/consultas/nueva">
+      <svg cIcon name="cilPlus" class="me-2"></svg>
+      Nueva consulta
+    </a>
+  </div>
+
+  <c-card class="border-0 shadow-sm mb-4">
+    <c-card-body>
+      <form [formGroup]="filtros" (ngSubmit)="buscar()">
+        <c-row class="align-items-end g-3">
+          <c-col md="4">
+            <label class="form-label" for="filtroCedula">Cédula</label>
+            <input
+              id="filtroCedula"
+              cFormControl
+              formControlName="cedula"
+              placeholder="V-10000001"
+              autocomplete="off"
+            />
+          </c-col>
+
+          <c-col md="3">
+            <label class="form-label" for="filtroModalidad">Modalidad</label>
+            <select id="filtroModalidad" cSelect formControlName="idModalidad">
+              <option [ngValue]="0">Todas</option>
+              @for (modalidad of modalidades(); track modalidad.id) {
+                <option [ngValue]="modalidad.id">{{ modalidad.nombre }}</option>
+              }
+            </select>
+          </c-col>
+
+          <c-col md="3">
+            <label class="form-label" for="filtroFecha">Fecha</label>
+            <input
+              id="filtroFecha"
+              cFormControl
+              type="date"
+              formControlName="fechaConsulta"
+            />
+          </c-col>
+
+          <c-col md="2" class="d-flex gap-2">
+            <button cButton color="primary" type="submit" [disabled]="cargando()">
+              <svg cIcon name="cilSearch" class="me-1"></svg>
+              Buscar
+            </button>
+            <button cButton color="secondary" variant="outline" type="button" (click)="limpiar()">
+              Limpiar
+            </button>
+          </c-col>
+        </c-row>
+      </form>
+    </c-card-body>
+  </c-card>
+
+  @if (error()) {
+    <div class="alert alert-danger d-flex align-items-center" role="alert">
+      <svg cIcon name="cilWarning" class="me-2"></svg>
+      {{ error() }}
+    </div>
+  }
+
+  <c-card class="border-0 shadow-sm">
+    <c-card-header class="bg-transparent d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Resultados</span>
+      @if (buscado() && !cargando()) {
+        <span class="text-body-secondary small">
+          {{ resultados().length }}
+          {{ resultados().length === 1 ? 'consulta' : 'consultas' }}
+        </span>
+      }
+    </c-card-header>
+
+    <c-card-body class="p-0">
+      @if (cargando()) {
+        <div class="text-center py-5">
+          <c-spinner color="primary"></c-spinner>
+        </div>
+      } @else if (resultados().length === 0) {
+        <div class="text-center text-body-secondary py-5">
+          <svg cIcon name="cilSearch" size="xl" class="d-block mx-auto mb-2 opacity-50"></svg>
+          No se encontraron consultas con esos criterios.
+        </div>
+      } @else {
+        <table cTable hover responsive class="mb-0 align-middle">
+          <thead>
+            <tr>
+              @for (columna of columnas; track $index) {
+                <th scope="col" class="text-nowrap">{{ columna }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (consulta of resultados(); track consulta.id_consulta) {
+              <tr>
+                <td class="text-nowrap">{{ consulta.fecha_consulta }}</td>
+                <td>
+                  <div class="fw-semibold">{{ consulta.nombre_colaborador ?? '—' }}</div>
+                  <div class="text-body-secondary small">{{ consulta.cedula }}</div>
+                </td>
+                <td>{{ consulta.modalidad ?? '—' }}</td>
+                <td class="text-body-secondary small">{{ consulta.cargo ?? '—' }}</td>
+                <td>{{ consulta.diagnosticos_resumen ?? 'Sin diagnóstico' }}</td>
+                <td>
+                  @if (consulta.flag_reposo === 1) {
+                    <c-badge color="warning">
+                      {{ consulta.dias_reposo }} {{ consulta.dias_reposo === 1 ? 'día' : 'días' }}
+                    </c-badge>
+                  } @else {
+                    <span class="text-body-secondary">—</span>
+                  }
+                </td>
+                <td class="text-end text-nowrap">
+                  <a
+                    cButton
+                    size="sm"
+                    color="primary"
+                    variant="ghost"
+                    [routerLink]="['/consultas', consulta.id_consulta]"
+                    title="Ver o editar"
+                  >
+                    <svg cIcon name="cilPencil"></svg>
+                  </a>
+                  <button
+                    cButton
+                    size="sm"
+                    color="danger"
+                    variant="ghost"
+                    type="button"
+                    title="Eliminar"
+                    [disabled]="eliminando() === consulta.id_consulta"
+                    (click)="eliminar(consulta)"
+                  >
+                    @if (eliminando() === consulta.id_consulta) {
+                      <c-spinner size="sm"></c-spinner>
+                    } @else {
+                      <svg cIcon name="cilTrash"></svg>
+                    }
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </c-card-body>
+  </c-card>
+</c-container>

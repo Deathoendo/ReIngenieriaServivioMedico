@@ -1,0 +1,374 @@
+<c-container class="px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h1 class="h3 mb-1">{{ esEdicion ? 'Editar consulta' : 'Nueva consulta' }}</h1>
+      <p class="text-body-secondary mb-0">
+        @if (esEdicion) {
+          Consulta n.º {{ idConsulta() }}
+        } @else {
+          Registro de una consulta médica del servicio
+        }
+      </p>
+    </div>
+    <a cButton color="secondary" variant="outline" routerLink="/consultas">Volver al listado</a>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger d-flex align-items-start" role="alert">
+      <svg cIcon name="cilWarning" class="me-2 mt-1 flex-shrink-0"></svg>
+      <div>{{ error() }}</div>
+    </div>
+  }
+
+  @if (aviso()) {
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+      <svg cIcon name="cilInfo" class="me-2"></svg>
+      {{ aviso() }}
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="text-center py-5">
+      <c-spinner color="primary"></c-spinner>
+      <p class="text-body-secondary mt-3 mb-0">Cargando...</p>
+    </div>
+  } @else {
+    <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      <!-- ------------------------------------------------ Colaborador -->
+      <c-card class="border-0 shadow-sm mb-4">
+        <c-card-header class="bg-transparent fw-semibold">Colaborador</c-card-header>
+        <c-card-body>
+          <c-row class="g-3">
+            <c-col md="4">
+              <label class="form-label" for="cedula">Cédula <span class="text-danger">*</span></label>
+              <c-input-group>
+                <input
+                  id="cedula"
+                  cFormControl
+                  formControlName="cedula"
+                  placeholder="V-10000001"
+                  autocomplete="off"
+                  [class.is-invalid]="formulario.controls.cedula.invalid && formulario.controls.cedula.touched"
+                  [readonly]="esEdicion"
+                />
+                <button
+                  cButton
+                  color="primary"
+                  variant="outline"
+                  type="button"
+                  [disabled]="buscandoColaborador() || esEdicion"
+                  (click)="buscarColaborador()"
+                >
+                  @if (buscandoColaborador()) {
+                    <c-spinner size="sm"></c-spinner>
+                  } @else {
+                    Buscar
+                  }
+                </button>
+              </c-input-group>
+              @if (formulario.controls.cedula.invalid && formulario.controls.cedula.touched) {
+                <div class="text-danger small mt-1">La cédula es obligatoria.</div>
+              }
+            </c-col>
+
+            <c-col md="8">
+              @if (colaborador(); as datos) {
+                <div class="bg-body-tertiary rounded p-3 h-100 d-flex flex-column justify-content-center">
+                  <div class="fw-semibold">{{ datos.nombre }}</div>
+                  <div class="text-body-secondary small">
+                    {{ datos.nombre_cargo ?? 'Sin cargo' }}
+                    @if (datos.nombre_vicepresidencia) {
+                      · {{ datos.nombre_vicepresidencia }}
+                    }
+                  </div>
+                </div>
+              } @else {
+                <div class="text-body-secondary small h-100 d-flex align-items-center">
+                  Escribe la cédula y pulsa <strong>Buscar</strong> para precargar los datos del
+                  colaborador.
+                </div>
+              }
+            </c-col>
+          </c-row>
+        </c-card-body>
+      </c-card>
+
+      <!-- ------------------------------------------------ Datos de la consulta -->
+      <c-card class="border-0 shadow-sm mb-4">
+        <c-card-header class="bg-transparent fw-semibold">Datos de la consulta</c-card-header>
+        <c-card-body>
+          <c-row class="g-3">
+            <c-col md="3">
+              <label class="form-label" for="fechaConsulta">
+                Fecha <span class="text-danger">*</span>
+              </label>
+              <input id="fechaConsulta" cFormControl type="date" formControlName="fechaConsulta" />
+            </c-col>
+
+            <c-col md="2">
+              <label class="form-label" for="edad">Edad</label>
+              <input id="edad" cFormControl type="number" min="0" max="120" formControlName="edad" />
+            </c-col>
+
+            <c-col md="3">
+              <label class="form-label" for="modalidad">Modalidad</label>
+              <select id="modalidad" cSelect formControlName="modalidad">
+                <option [ngValue]="null">Sin especificar</option>
+                @for (opcion of catalogos()?.modalidad ?? []; track opcion.id) {
+                  <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                }
+              </select>
+            </c-col>
+
+            <c-col md="2">
+              <label class="form-label" for="tipoNomina">Tipo de nómina</label>
+              <input id="tipoNomina" cFormControl formControlName="tipoNomina" placeholder="Contratado" />
+            </c-col>
+
+            <c-col md="2">
+              <label class="form-label" for="cargo">Cargo</label>
+              <select id="cargo" cSelect formControlName="cargo">
+                <option [ngValue]="null">Sin especificar</option>
+                @for (opcion of catalogos()?.cargos ?? []; track opcion.id) {
+                  <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                }
+              </select>
+            </c-col>
+
+            <c-col md="4">
+              <label class="form-label" for="vicepresidencia">Vicepresidencia</label>
+              <select id="vicepresidencia" cSelect formControlName="vicepresidencia">
+                <option [ngValue]="null">Sin especificar</option>
+                @for (opcion of catalogos()?.vicepresidencias ?? []; track opcion.id) {
+                  <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                }
+              </select>
+            </c-col>
+          </c-row>
+        </c-card-body>
+      </c-card>
+
+      <!-- ------------------------------------------------ Signos vitales -->
+      <c-card class="border-0 shadow-sm mb-4">
+        <c-card-header class="bg-transparent fw-semibold">Signos vitales y medidas</c-card-header>
+        <c-card-body>
+          <c-row class="g-3">
+            <c-col md="2">
+              <label class="form-label" for="tension">Tensión (sis.)</label>
+              <input id="tension" cFormControl formControlName="tension" placeholder="120" />
+            </c-col>
+            <c-col md="2">
+              <label class="form-label" for="tensionB">Tensión (dias.)</label>
+              <input id="tensionB" cFormControl formControlName="tensionB" placeholder="80" />
+            </c-col>
+            <c-col md="2">
+              <label class="form-label" for="frecuencia">Frec. cardíaca</label>
+              <input id="frecuencia" cFormControl type="number" min="0" max="300" formControlName="frecuencia" />
+            </c-col>
+            <c-col md="2">
+              <label class="form-label" for="temperatura">Temperatura (°C)</label>
+              <input id="temperatura" cFormControl type="number" step="0.1" min="25" max="45" formControlName="temperatura" />
+            </c-col>
+            <c-col md="2">
+              <label class="form-label" for="respiracion">Frec. respiratoria</label>
+              <input id="respiracion" cFormControl type="number" min="0" max="120" formControlName="respiracion" />
+            </c-col>
+
+            <c-col md="2">
+              <label class="form-label" for="talla">Talla (m)</label>
+              <input id="talla" cFormControl type="number" step="0.01" min="0.3" max="2.8" formControlName="talla" />
+            </c-col>
+            <c-col md="2">
+              <label class="form-label" for="peso">Peso (kg)</label>
+              <input id="peso" cFormControl type="number" step="0.01" min="1" max="400" formControlName="peso" />
+            </c-col>
+            <c-col md="2">
+              <label class="form-label" for="imc">IMC</label>
+              <input id="imc" cFormControl type="number" step="0.01" formControlName="imc" />
+              <div class="form-text">Se calcula con la talla y el peso.</div>
+            </c-col>
+          </c-row>
+        </c-card-body>
+      </c-card>
+
+      <!-- ------------------------------------------------ Reposo -->
+      <c-card class="border-0 shadow-sm mb-4">
+        <c-card-header class="bg-transparent fw-semibold">Reposo médico</c-card-header>
+        <c-card-body>
+          <c-form-check class="mb-3">
+            <input
+              cFormCheckInput
+              type="checkbox"
+              id="flagReposo"
+              formControlName="flagReposo"
+            />
+            <label cFormCheckLabel for="flagReposo">Esta consulta genera reposo</label>
+          </c-form-check>
+
+          @if (formulario.controls.flagReposo.value) {
+            <c-row class="g-3">
+              <c-col md="3">
+                <label class="form-label" for="idTipoReposo">
+                  Tipo <span class="text-danger">*</span>
+                </label>
+                <select id="idTipoReposo" cSelect formControlName="idTipoReposo">
+                  <option [ngValue]="null">Selecciona...</option>
+                  @for (opcion of catalogos()?.tipo_reposo ?? []; track opcion.id) {
+                    <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                  }
+                </select>
+              </c-col>
+
+              <c-col md="3">
+                <label class="form-label" for="idCategoriaReposo">Categoría</label>
+                <select id="idCategoriaReposo" cSelect formControlName="idCategoriaReposo">
+                  <option [ngValue]="null">Sin especificar</option>
+                  @for (opcion of catalogos()?.categoria_reposo ?? []; track opcion.id) {
+                    <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                  }
+                </select>
+              </c-col>
+
+              <c-col md="2">
+                <label class="form-label" for="diasReposo">Días</label>
+                <input id="diasReposo" cFormControl type="number" min="0" max="365" formControlName="diasReposo" />
+              </c-col>
+
+              <c-col md="2">
+                <label class="form-label" for="fechaDesde">Desde</label>
+                <input id="fechaDesde" cFormControl type="date" formControlName="fechaDesde" />
+              </c-col>
+              <c-col md="2">
+                <label class="form-label" for="fechaHasta">Hasta</label>
+                <input id="fechaHasta" cFormControl type="date" formControlName="fechaHasta" />
+              </c-col>
+
+              <c-col md="3">
+                <label class="form-label" for="fechaReintegro">Fecha de reintegro</label>
+                <input id="fechaReintegro" cFormControl type="date" formControlName="fechaReintegro" />
+              </c-col>
+            </c-row>
+          }
+        </c-card-body>
+      </c-card>
+
+      <!-- ------------------------------------------------ Diagnósticos -->
+      <c-card class="border-0 shadow-sm mb-4">
+        <c-card-header class="bg-transparent d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">
+            Diagnósticos
+            <c-badge color="secondary" class="ms-2">{{ diagnosticos.length }}</c-badge>
+          </span>
+          <button
+            cButton
+            size="sm"
+            color="primary"
+            variant="outline"
+            type="button"
+            [disabled]="diagnosticos.length >= 20"
+            (click)="agregarDiagnostico()"
+          >
+            <svg cIcon name="cilPlus" class="me-1"></svg>
+            Añadir diagnóstico
+          </button>
+        </c-card-header>
+
+        <c-card-body>
+          @if (diagnosticos.length === 0) {
+            <p class="text-body-secondary mb-0">
+              Sin diagnósticos. Una consulta puede guardarse sin ellos.
+            </p>
+          }
+
+          <div formArrayName="diagnosticos">
+            @for (fila of diagnosticos.controls; track $index) {
+              <c-row class="g-2 align-items-end mb-2" [formGroupName]="$index">
+                <c-col md="4">
+                  <label class="form-label small" [for]="'diag' + $index">Diagnóstico</label>
+                  <select
+                    [id]="'diag' + $index"
+                    cSelect
+                    formControlName="diagnostico"
+                    [class.is-invalid]="fila.controls.diagnostico.invalid && fila.controls.diagnostico.touched"
+                  >
+                    <option [ngValue]="null">Selecciona...</option>
+                    @for (opcion of catalogos()?.diagnostico ?? []; track opcion.id) {
+                      <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                    }
+                  </select>
+                </c-col>
+
+                <c-col md="3">
+                  <label class="form-label small" [for]="'pat' + $index">Patología</label>
+                  <select [id]="'pat' + $index" cSelect formControlName="patologia">
+                    <option [ngValue]="null">Sin especificar</option>
+                    @for (opcion of catalogos()?.patologia ?? []; track opcion.id) {
+                      <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                    }
+                  </select>
+                </c-col>
+
+                <c-col md="3">
+                  <label class="form-label small" [for]="'esp' + $index">Especialidad</label>
+                  <select [id]="'esp' + $index" cSelect formControlName="especialidad">
+                    <option [ngValue]="null">Sin especificar</option>
+                    @for (opcion of catalogos()?.especialidad ?? []; track opcion.id) {
+                      <option [ngValue]="opcion.id">{{ opcion.nombre }}</option>
+                    }
+                  </select>
+                </c-col>
+
+                <c-col md="2">
+                  <button
+                    cButton
+                    color="danger"
+                    variant="outline"
+                    type="button"
+                    class="w-100"
+                    (click)="quitarDiagnostico($index)"
+                  >
+                    <svg cIcon name="cilTrash" class="me-1"></svg>
+                    Quitar
+                  </button>
+                </c-col>
+              </c-row>
+            }
+          </div>
+        </c-card-body>
+      </c-card>
+
+      <!-- ------------------------------------------------ Contacto -->
+      <c-card class="border-0 shadow-sm mb-4">
+        <c-card-header class="bg-transparent fw-semibold">Contacto</c-card-header>
+        <c-card-body>
+          <c-row class="g-3">
+            <c-col md="4">
+              <label class="form-label" for="email">Correo de contacto</label>
+              <input id="email" cFormControl type="email" formControlName="email" />
+            </c-col>
+            <c-col md="3">
+              <label class="form-label" for="telefono">Teléfono</label>
+              <input id="telefono" cFormControl formControlName="telefono" placeholder="+58 412-0000000" />
+            </c-col>
+            <c-col md="5">
+              <label class="form-label" for="contactoEmergencia">Contacto de emergencia</label>
+              <input id="contactoEmergencia" cFormControl formControlName="contactoEmergencia" />
+            </c-col>
+          </c-row>
+        </c-card-body>
+      </c-card>
+
+      <div class="d-flex justify-content-end gap-2 mb-4">
+        <a cButton color="secondary" variant="outline" routerLink="/consultas">Cancelar</a>
+        <button cButton color="primary" type="submit" [disabled]="guardando()">
+          @if (guardando()) {
+            <c-spinner size="sm" class="me-2"></c-spinner>
+            Guardando...
+          } @else {
+            {{ esEdicion ? 'Guardar cambios' : 'Registrar consulta' }}
+          }
+        </button>
+      </div>
+    </form>
+  }
+</c-container>
