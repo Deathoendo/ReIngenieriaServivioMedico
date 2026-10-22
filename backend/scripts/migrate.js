@@ -50,13 +50,31 @@ export function splitStatements(sql) {
 
     if (current.trimEnd().endsWith(delimiter)) {
       const statement = current.trimEnd().slice(0, -delimiter.length).trim();
-      if (statement && !IGNORAR.test(statement)) statements.push(statement);
+      if (esEjecutable(statement)) statements.push(statement);
       current = '';
     }
   }
 
-  if (current.trim() && !IGNORAR.test(current)) statements.push(current.trim());
+  if (esEjecutable(current.trim())) statements.push(current.trim());
   return statements;
+}
+
+/**
+ * Decide si una sentencia debe ejecutarse.
+ *
+ * Hay que mirar el texto SIN los comentarios de cabecera: el `USE servicio_medico`
+ * del seed viaja pegado a los comentarios que lo preceden, y comparar contra la
+ * primera línea (`-- ...`) haría que se colara y mandara el seed a una base vacía.
+ */
+function esEjecutable(statement) {
+  const codigo = statement
+    .split('\n')
+    .filter((linea) => !linea.trim().startsWith('--'))
+    .join('\n')
+    .trim();
+
+  if (!codigo) return false;
+  return !IGNORAR.test(codigo);
 }
 
 async function runFile(connection, filename, log) {
@@ -80,11 +98,12 @@ async function runFile(connection, filename, log) {
  * desde el adaptador sin servidor, que la invoca cuando AUTO_MIGRATE=true.
  */
 export async function migrate({ log = console.log } = {}) {
-  const { host, port, user, password, database } = config.mysql;
+  const { host, port, user, password, database, ssl } = config.mysql;
+  const tls = ssl ? { rejectUnauthorized: false } : undefined;
   log(`[db:migrate] Conectando a ${host}:${port} como ${user}...`);
 
   // 1. Conexión SIN base de datos: puede que todavía no exista.
-  const admin = await mysql.createConnection({ host, port, user, password });
+  const admin = await mysql.createConnection({ host, port, user, password, ssl: tls });
   try {
     try {
       await admin.query(
@@ -100,7 +119,7 @@ export async function migrate({ log = console.log } = {}) {
   }
 
   // 2. Conexión ya dentro de la base de datos de destino.
-  const connection = await mysql.createConnection({ host, port, user, password, database });
+  const connection = await mysql.createConnection({ host, port, user, password, database, ssl: tls });
   try {
     await runFile(connection, 'schema.sql', log);
     await runFile(connection, 'seed.sql', log);

@@ -19,6 +19,12 @@ export const pool = mysql.createPool({
   // Evita sorpresas de zona horaria entre Node y MySQL al leer/grabar fechas.
   timezone: 'Z',
   dateStrings: ['DATE', 'DATETIME'],
+  // TLS cuando el servidor lo exige. `rejectUnauthorized: false` porque los
+  // proveedores gestionados firman con su propia CA, que no está en el almacén
+  // del contenedor: la conexión va cifrada, solo se omite la validación de la
+  // cadena. Para verificación completa, define MYSQL_SSL_CA con la CA del
+  // proveedor en vez de activar esta bandera.
+  ssl: config.mysql.ssl ? { rejectUnauthorized: false } : undefined,
 });
 
 /**

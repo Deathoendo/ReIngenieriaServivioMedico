@@ -72,6 +72,8 @@ export const config = {
     password: process.env.MYSQL_PW || '',
     database: process.env.MYSQL_DB || 'servicio_medico',
     connectionLimit: num('MYSQL_CONN_LIMIT', 10),
+    // MySQL gestionado (Aiven, Railway, PlanetScale…) exige TLS en la conexión.
+    ssl: process.env.MYSQL_SSL === 'true',
   },
 };
 
