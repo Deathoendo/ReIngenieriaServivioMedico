@@ -3,7 +3,8 @@
 Aplicación **full-stack** de un portal corporativo de gestión de consultas médicas.
 
 - **API** — Node.js 20+ (ESM nativo) con Express 4: autenticación contra Directorio
-  Activo, sesión única por usuario, control de acceso por roles y el módulo de
+  Activo —con un modo local por bcrypt para que sea ejecutable sin infraestructura
+  privada—, sesión única por usuario, un rol resuelto en el acceso y el módulo de
   consultas (cabecera + diagnósticos) sobre MySQL.
 - **Interfaz** — Angular 21 con componentes standalone, formularios reactivos y
   sesión en el cliente. Consume la API anterior y no duplica reglas de negocio:
@@ -15,6 +16,47 @@ Aplicación **full-stack** de un portal corporativo de gestión de consultas mé
 > credenciales ni datos del sistema original: la empresa **Grupo Meridiano** es
 > ficticia y todos sus registros son inventados. Se publica como pieza de portafolio
 > técnico, no como código de producción de terceros.
+
+---
+
+## Demo en vivo
+
+Se puede probar sin clonar el repositorio y sin crear ninguna cuenta:
+
+| | |
+|---|---|
+| **Portal** | <https://portal-medico-web.vercel.app> |
+| **API** | <https://portal-medico-api.vercel.app/api/health> |
+
+### Credenciales
+
+Están a la vista a propósito: la demo corre sobre datos inventados y no toca ningún sistema real.
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| `ana.reyes@meridiano.local` | `Demo1234!` | Administrador |
+| `luis.pardo@meridiano.local` | `Demo1234!` | Médico |
+| `marta.leon@meridiano.local` | `Demo1234!` | Analista |
+
+Las tres cuentas usan la misma contraseña porque el modo local valida el hash bcrypt contra la tabla `usuarios`. El rol se resuelve en el acceso y viaja en la sesión — hasta dónde llega hoy ese control está en [Limitaciones conocidas](#limitaciones-conocidas).
+
+> **La sesión es única por usuario.** Si dos personas entran con la misma cuenta, a la primera se le corta la sesión en la siguiente petición. Para probar en paralelo usa cuentas distintas: hay tres.
+
+### Cómo se ve
+
+![Pantalla de acceso](docs/demo-login.png)
+
+![Resumen de consultas](docs/demo-panel.png)
+
+### Cómo está desplegado
+
+| Pieza | Dónde |
+|---|---|
+| Interfaz | Vercel — sitio estático de Angular, reescribe `/api/*` hacia la API |
+| API | Vercel — función sin servidor; `backend/api/index.js` adapta Express |
+| Base de datos | MySQL gestionado, creada con `backend/scripts/migrate.js` |
+
+La API se inicializa sola en el primer arranque en frío si la base está vacía (`AUTO_MIGRATE=true`) y a partir de ahí **no vuelve a tocar los datos**: lo que registres en la demo permanece.
 
 ---
 
@@ -226,8 +268,8 @@ npm run build    # compila a dist/ (usa environment.production.ts)
 npm test         # pruebas de la interfaz
 ```
 
-**Credenciales de la demo** — usuario `ana.reyes@meridiano.local`, contraseña `Demo1234!`
-(la misma para `luis.pardo@` y `marta.leon@`).
+**Credenciales de la demo** — ver [Demo en vivo](#demo-en-vivo). En local son las mismas:
+usuario `ana.reyes@meridiano.local`, contraseña `Demo1234!`.
 
 ---
 
@@ -443,6 +485,11 @@ envió de verdad y se comprobó que la respuesta devuelve los 25 campos del mode
 
 ## Limitaciones conocidas
 
+- **El rol se resuelve, pero todavía no restringe ninguna ruta.** `requireRole` está
+  implementado en `middleware/auth.middleware.js` y probado, pero ningún endpoint lo
+  usa: hoy las tres cuentas ven lo mismo. Aplicarlo es una línea por ruta; decidir la
+  política (por ejemplo, que solo un Administrador pueda eliminar una consulta) es una
+  decisión de negocio, y no la voy a inventar.
 - **Sin límite de tasa en el login.** En producción debería haber uno por IP y por
   cuenta; hoy nada impide intentos ilimitados.
 - **Sin refresco de token.** La sesión dura lo que dura el JWT (15 minutos por
