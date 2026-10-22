@@ -1,0 +1,31 @@
+<c-sidebar
+  #sidebar="cSidebar"
+  class="d-print-none sidebar sidebar-fixed sidebar-dark"
+  id="sidebar"
+  visible
+>
+  <c-sidebar-header class="border-bottom">
+    <c-sidebar-brand routerLink="/">
+      <span class="fw-semibold fs-5 text-white">Servicio Médico</span>
+    </c-sidebar-brand>
+  </c-sidebar-header>
+
+  <ng-scrollbar>
+    <c-sidebar-nav [navItems]="navItems" dropdownMode="close" />
+  </ng-scrollbar>
+</c-sidebar>
+
+<div class="wrapper d-flex flex-column min-vh-100 bg-body-tertiary">
+  <app-default-header
+    [cShadowOnScroll]="'sm'"
+    class="d-print-none header header-sticky p-0 shadow-sm"
+    position="sticky"
+    sidebarId="sidebar"
+  />
+
+  <div class="body flex-grow-1 d-flex flex-column">
+    <c-container fluid class="flex-grow-1 p-0 m-0 d-flex flex-column">
+      <router-outlet />
+    </c-container>
+  </div>
+</div>

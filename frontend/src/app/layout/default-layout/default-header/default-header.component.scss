@@ -1,0 +1,36 @@
+// Importamos los módulos de CoreUI para poder usar sus mixins y variables
+@use "@coreui/coreui/scss/functions";
+@use "@coreui/coreui/scss/variables";
+@use "@coreui/coreui/scss/mixins" as coreui;
+
+// 1. Asegura que el contenedor del header NO corte el menú
+:host {
+  // Permite que el contenido que se sale (el menú) sea visible
+  overflow: visible !important;
+  // Pone el header por encima de otros elementos para que el menú no quede detrás
+  z-index: 1100;
+  position: relative;
+}
+
+.header {
+  margin-bottom: 0 !important;
+  overflow: visible;
+  // Corregimos la llamada al mixin añadiendo el namespace 'coreui'
+  @include coreui.media-breakpoint-up(lg) {
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+// 2. Forzamos la alineación del menú de usuario
+.user-dropdown-menu {
+  // Fija la posición a la derecha y quita la de la izquierda
+  right: 0 !important;
+  left: auto !important;
+  // Asegura que no se mueva por otras transformaciones
+  transform: none !important;
+  margin-top: 0.5rem !important;
+}
+
+[cDropdownItem] {
+  cursor: pointer;
+}
