@@ -33,6 +33,27 @@ explícita:
 3. **Datos clínicos íntegros.** Una consulta es una cabecera más N diagnósticos. O se
    guardan los dos, o no se guarda nada.
 
+### Por qué la demo pública usa el modo local
+
+El portal valida la identidad contra **Directorio Activo** y ese proveedor está
+implementado (`backend/src/auth/providers/ldap.provider.js`: bind real con `ldapts`,
+escape de filtros según la RFC 4515, traducción de la pertenencia a grupos en permisos).
+
+Pero **la demo que se levanta desde este repositorio corre con `AUTH_PROVIDER=local`**,
+que valida contra la tabla `usuarios` con hash bcrypt. El motivo es práctico: un
+directorio corporativo no se puede exponer en un repositorio público, y sin él la
+aplicación no arrancaría para quien la clone. El modo local existe para que el sistema
+sea ejecutable y verificable sin depender de infraestructura privada — **no es un atajo
+para saltarse la autenticación**: comprueba el hash y falla si la contraseña no
+corresponde.
+
+Los dos proveedores comparten la misma interfaz, así que el resto del sistema no
+distingue cuál está activo. Pasar a un despliegue real es cambiar una variable:
+
+```bash
+AUTH_PROVIDER=ldap
+```
+
 ## Stack
 
 | Capa | Tecnología |
