@@ -1,0 +1,102 @@
+<div class="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
+  <c-container>
+    <c-row class="justify-content-center">
+      <c-col md="7" lg="5" xl="4">
+        <c-card class="p-2 shadow-sm border-0">
+          <c-card-body class="p-4">
+            <div class="text-center mb-4">
+              <h1 class="h3 mb-1">Servicio Médico</h1>
+              <p class="text-body-secondary mb-0">Portal de gestión de consultas</p>
+            </div>
+
+            @if (error()) {
+              <c-alert color="danger" class="d-flex align-items-start" role="alert">
+                <svg cIcon name="cilWarning" class="me-2 flex-shrink-0 mt-1"></svg>
+                <div>{{ error() }}</div>
+              </c-alert>
+            }
+
+            <form cForm [formGroup]="formulario" (ngSubmit)="ingresar()" novalidate>
+              <div class="mb-3">
+                <label class="form-label" for="email">Correo corporativo</label>
+                <c-input-group>
+                  <span cInputGroupText>
+                    <svg cIcon name="cilEnvelopeClosed"></svg>
+                  </span>
+                  <input
+                    id="email"
+                    cFormControl
+                    type="email"
+                    formControlName="email"
+                    autocomplete="username"
+                    placeholder="nombre.apellido@meridiano.local"
+                    [class.is-invalid]="email.invalid && email.touched"
+                  />
+                </c-input-group>
+                @if (email.invalid && email.touched) {
+                  <div class="text-danger small mt-1">
+                    @if (email.errors?.['required']) {
+                      El correo es obligatorio.
+                    } @else if (email.errors?.['email']) {
+                      Introduce un correo con formato válido.
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label" for="password">Contraseña</label>
+                <c-input-group>
+                  <span cInputGroupText>
+                    <svg cIcon name="cilLockLocked"></svg>
+                  </span>
+                  <input
+                    id="password"
+                    cFormControl
+                    [type]="verClave() ? 'text' : 'password'"
+                    formControlName="password"
+                    autocomplete="current-password"
+                    [class.is-invalid]="password.invalid && password.touched"
+                  />
+                  <span
+                    cInputGroupText
+                    role="button"
+                    tabindex="0"
+                    (click)="alternarClave()"
+                    (keydown.enter)="alternarClave()"
+                    [attr.aria-label]="verClave() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                  >
+                    <svg cIcon [name]="verClave() ? 'cilLockLocked' : 'cilLowVision'"></svg>
+                  </span>
+                </c-input-group>
+                @if (password.invalid && password.touched) {
+                  <div class="text-danger small mt-1">La contraseña es obligatoria.</div>
+                }
+              </div>
+
+              <c-row class="align-items-center">
+                <c-col xs="auto" class="d-grid">
+                  <button cButton color="primary" type="submit" [disabled]="enviando()">
+                    @if (enviando()) {
+                      <c-spinner size="sm" class="me-2"></c-spinner>
+                      Verificando...
+                    } @else {
+                      Iniciar sesión
+                    }
+                  </button>
+                </c-col>
+                <c-col class="text-end">
+                  <small class="text-body-secondary">Acceso restringido al personal autorizado</small>
+                </c-col>
+              </c-row>
+            </form>
+          </c-card-body>
+        </c-card>
+
+        <p class="text-center text-body-secondary small mt-3 mb-0">
+          Las credenciales se validan contra el directorio corporativo.
+        </p>
+      </c-col>
+    </c-row>
+  </c-container>
+</div>
