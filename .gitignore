@@ -1,0 +1,29 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Secretos — el .env nunca se versiona
+.env
+.env.local
+.env.*.local
+
+# Build y caché
+dist/
+build/
+out-tsc/
+.angular/
+
+# Cobertura y pruebas
+coverage/
+*.lcov
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
