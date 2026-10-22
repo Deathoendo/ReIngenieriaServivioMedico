@@ -1,0 +1,14 @@
+// Ajustes puntuales de estilo.
+//
+// Los estilos de las pantallas de demostración de CoreUI (gráficas, calendario)
+// se retiraron junto con esas pantallas: aquí solo va lo que el portal usa.
+
+// La barra lateral queda fija y con scroll propio cuando el menú crece.
+.ng-scrollbar {
+  --scrollbar-padding: 1px;
+  --scrollbar-size: 5px;
+  --scrollbar-thumb-color: var(--cui-gray-600, #8a93a5);
+  --scrollbar-thumb-hover-color: var(--cui-gray-500, #aab3c5);
+  --scrollbar-hover-size: calc(var(--scrollbar-size) * 1.5);
+  --scrollbar-border-radius: 5px;
+}

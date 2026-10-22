@@ -1,0 +1,58 @@
+// ======================================================
+// Estilos globales del portal
+// ======================================================
+
+// Base del kit de interfaz CoreUI. Se carga una sola vez, aquí.
+@use "@coreui/coreui/scss/coreui" as * with (
+  $enable-deprecation-messages: false
+);
+
+@use "theme";
+@use "custom";
+
+// ------------------------------------------------------
+// Ajustes propios del portal
+// ------------------------------------------------------
+
+:root {
+  --cui-font-sans-serif: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--cui-font-sans-serif);
+  color: #2b3035;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: #1a1e21;
+  letter-spacing: -0.01em;
+}
+
+label, .form-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #4f5d73;
+}
+
+// Campos de formulario: se les da algo más de aire porque la mayoría de las
+// pantallas son de captura y el usuario pasa horas aquí.
+.form-control,
+.form-select {
+  font-weight: 500;
+  border: 1px solid #ced4da;
+  padding: 0.55rem 0.75rem;
+}
+
+// Las flechitas de los campos numéricos estorban en un formulario clínico:
+// los valores se escriben, no se incrementan a clics.
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
