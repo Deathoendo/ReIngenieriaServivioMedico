@@ -5,8 +5,8 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiSuccess, Sesion, Usuario } from '../models/api.models';
 
-const CLAVE_TOKEN = 'servmed.token';
-const CLAVE_USUARIO = 'servmed.usuario';
+const CLAVE_TOKEN = 'portalmed.token';
+const CLAVE_USUARIO = 'portalmed.usuario';
 
 /**
  * Sesión del usuario.

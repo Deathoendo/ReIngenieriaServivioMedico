@@ -68,7 +68,7 @@ export const config = {
   mysql: {
     host: process.env.MYSQL_HOST || '127.0.0.1',
     port: num('MYSQL_PORT', 3306),
-    user: process.env.MYSQL_USER || 'servmed',
+    user: process.env.MYSQL_USER || 'portalmed',
     password: process.env.MYSQL_PW || '',
     database: process.env.MYSQL_DB || 'servicio_medico',
     connectionLimit: num('MYSQL_CONN_LIMIT', 10),

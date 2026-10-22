@@ -8,13 +8,13 @@
 services:
   mysql:
     image: mysql:8.4
-    container_name: servmed-mysql
+    container_name: portalmed-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: servicio_medico
-      MYSQL_USER: servmed
-      MYSQL_PASSWORD: servmed
+      MYSQL_USER: portalmed
+      MYSQL_PASSWORD: portalmed
     ports:
       - "3307:3306"
     command:
@@ -26,7 +26,7 @@ services:
       timeout: 5s
       retries: 20
     volumes:
-      - servmed-data:/var/lib/mysql
+      - portalmed-data:/var/lib/mysql
 
 volumes:
-  servmed-data:
+  portalmed-data:

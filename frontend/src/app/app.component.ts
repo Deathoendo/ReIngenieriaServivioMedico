@@ -22,7 +22,7 @@ export class AppComponent implements OnInit {
 
     // El tema se fuerza a claro: es un portal administrativo y el modo oscuro
     // añadiría contraste impredecible en un formulario clínico.
-    this.#colorModeService.localStorageItemName.set('servmed.tema');
+    this.#colorModeService.localStorageItemName.set('portalmed.tema');
     this.#colorModeService.eventName.set('ColorSchemeChange');
     this.#colorModeService.colorMode.set('light');
   }
