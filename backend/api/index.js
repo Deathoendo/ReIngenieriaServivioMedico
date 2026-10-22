@@ -30,7 +30,10 @@ const app = createApp();
 const migracion =
   process.env.AUTO_MIGRATE === 'true'
     ? import('../scripts/migrate.js')
-        .then(({ migrate }) => migrate({ log: (linea) => console.log(linea) }))
+        // soloSiVacia: el esquema recrea las tablas, así que en un arranque en
+        // frío posterior no debe volver a aplicarse o borraría las consultas
+        // que haya registrado quien esté probando la demo.
+        .then(({ migrate }) => migrate({ log: (linea) => console.log(linea), soloSiVacia: true }))
         .then(() => console.log('[demo] Base de datos inicializada.'))
         .catch((error) => console.error('[demo] No se pudo inicializar la base:', error.message))
     : Promise.resolve();

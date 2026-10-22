@@ -94,10 +94,27 @@ async function runFile(connection, filename, log) {
 }
 
 /**
- * Aplica el esquema y los datos sintéticos. Exportada para poder reutilizarla
- * desde el adaptador sin servidor, que la invoca cuando AUTO_MIGRATE=true.
+ * Comprueba si la base ya tiene datos. Se usa para no repetir la carga: el
+ * esquema empieza con `DROP TABLE IF EXISTS`, así que volver a aplicarlo
+ * BORRARÍA lo que haya escrito quien esté usando la demo.
  */
-export async function migrate({ log = console.log } = {}) {
+async function estaInicializada(connection) {
+  try {
+    const [filas] = await connection.query('SELECT COUNT(*) AS n FROM usuarios');
+    return Number(filas[0].n) > 0;
+  } catch {
+    return false; // La tabla todavía no existe: base recién creada.
+  }
+}
+
+/**
+ * @param {object}   [opciones]
+ * @param {Function} [opciones.log]        Destino de los mensajes.
+ * @param {boolean}  [opciones.soloSiVacia] Si es true, no toca nada cuando la
+ *   base ya está poblada. Es lo que usa la demo pública: inicializa la primera
+ *   vez y a partir de ahí respeta los datos de los visitantes.
+ */
+export async function migrate({ log = console.log, soloSiVacia = false } = {}) {
   const { host, port, user, password, database, ssl } = config.mysql;
   const tls = ssl ? { rejectUnauthorized: false } : undefined;
   log(`[db:migrate] Conectando a ${host}:${port} como ${user}...`);
@@ -121,6 +138,11 @@ export async function migrate({ log = console.log } = {}) {
   // 2. Conexión ya dentro de la base de datos de destino.
   const connection = await mysql.createConnection({ host, port, user, password, database, ssl: tls });
   try {
+    if (soloSiVacia && (await estaInicializada(connection))) {
+      log('[db:migrate] La base ya está inicializada; no se toca.');
+      return;
+    }
+
     await runFile(connection, 'schema.sql', log);
     await runFile(connection, 'seed.sql', log);
     log(`[db:migrate] Listo. Base de datos "${database}" creada y poblada.`);
