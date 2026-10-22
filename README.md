@@ -1,8 +1,13 @@
-# Portal de Servicio Médico — API
+# Portal de Servicio Médico
 
-Backend de un portal corporativo de **gestión de consultas médicas**: autenticación
-contra Directorio Activo, sesión única por usuario, control de acceso por grupos y
-roles, y el módulo de consultas (cabecera + diagnósticos) sobre MySQL.
+Aplicación **full-stack** de un portal corporativo de gestión de consultas médicas.
+
+- **API** — Node.js 20+ (ESM nativo) con Express 4: autenticación contra Directorio
+  Activo, sesión única por usuario, control de acceso por roles y el módulo de
+  consultas (cabecera + diagnósticos) sobre MySQL.
+- **Interfaz** — Angular 21 con componentes standalone, formularios reactivos y
+  sesión en el cliente. Consume la API anterior y no duplica reglas de negocio:
+  valida en pantalla lo que la persona puede corregir y delega el resto al servidor.
 
 > **Implementación de referencia con datos sintéticos.**
 > Este repositorio es una reescritura limpia de la *arquitectura* de un portal de
@@ -32,15 +37,20 @@ explícita:
 
 | Capa | Tecnología |
 |---|---|
+| Interfaz | Angular 21 (componentes standalone, signals, control de flujo `@if`/`@for`) |
+| Kit de UI | CoreUI for Angular 5 (MIT) — ver [CREDITS.md](CREDITS.md) |
+| Formularios | Angular Reactive Forms con validación en el cliente |
 | Runtime | Node.js 20+ (ESM nativo) |
 | HTTP | Express 4 |
 | Identidad | LDAP / Active Directory (`ldapts`) · bcrypt para el modo local |
 | Sesión | JSON Web Tokens (`jsonwebtoken`) con sesión única persistida |
 | Base de datos | MySQL 8 / MariaDB 11 con stored procedures |
-| Pruebas | Runner nativo de Node (`node:test`) — sin frameworks adicionales |
+| Pruebas | `node:test` en la API · Karma + Jasmine en la interfaz |
 
 **Sin dependencias de más:** la validación de entrada y el manejo de errores están
-escritos a mano en lugar de traer un framework. Son unas 200 líneas y se leen.
+escritos a mano en lugar de traer un framework. Son unas 200 líneas y se leen. En la
+interfaz se usa el mismo criterio: no hay librería de estado ni de formularios más
+allá de lo que Angular trae de serie.
 
 ---
 
@@ -72,6 +82,18 @@ negocio sin levantar un servidor.
 
 ### Estructura
 
+El repositorio tiene dos proyectos independientes, cada uno con su propio
+`package.json`:
+
+```
+servicio-medico-ref/
+├── backend/      API REST  (Node.js + Express + MySQL)
+├── frontend/     Interfaz  (Angular 21 + CoreUI)
+└── docker-compose.yml        base de datos para desarrollo
+```
+
+Detalle del backend:
+
 ```
 backend/
 ├── src/
@@ -99,9 +121,42 @@ backend/
 └── test/                       pruebas unitarias y de integración
 ```
 
+Detalle del frontend:
+
+```
+frontend/
+├── src/
+│   ├── main.ts                     arranque de la aplicación
+│   ├── index.html                  documento base
+│   ├── environments/               configuración por entorno (dev / producción)
+│   ├── scss/                       estilos globales: base de CoreUI + ajustes propios
+│   └── app/
+│       ├── app.config.ts           providers globales (router, http, interceptores)
+│       ├── app.routes.ts           rutas con carga diferida y guards de sesión
+│       ├── core/
+│       │   ├── models/             contrato tipado de la API (sin `any`)
+│       │   ├── services/           auth.service · consulta.service
+│       │   ├── guards/             authGuard · publicoGuard
+│       │   └── interceptors/       inyecta el token y reacciona al 401
+│       ├── layout/                 armazón: barra lateral y cabecera
+│       ├── icons/                  subconjunto de iconos registrados
+│       └── views/
+│           ├── login/              acceso al portal
+│           ├── inicio/             resumen de la sesión
+│           ├── consultas/
+│           │   ├── listado/        búsqueda, filtros y baja
+│           │   └── formulario/     alta y edición (un solo componente)
+│           └── no-encontrado/      404
+├── angular.json
+├── karma.conf.js
+└── package.json
+```
+
 ---
 
 ## Puesta en marcha
+
+Se levantan dos procesos: la **API** (puerto 3000) y la **interfaz** (puerto 4200).
 
 ### 1. Base de datos
 
@@ -113,7 +168,7 @@ docker compose up -d
 
 O con un MySQL/MariaDB propio, crea un usuario y ajusta el `.env` en consecuencia.
 
-### 2. Configuración y datos
+### 2. API
 
 ```bash
 cd backend
@@ -125,8 +180,6 @@ npm install
 npm run db:migrate
 ```
 
-### 3. Arranque
-
 ```bash
 npm start        # producción
 npm run dev      # desarrollo, con recarga automática
@@ -134,6 +187,23 @@ npm test         # 39 pruebas
 ```
 
 El servidor queda en `http://localhost:3000` y expone `GET /api/health`.
+
+### 3. Interfaz
+
+```bash
+cd frontend
+npm install
+npm start        # http://localhost:4200
+```
+
+`npm start` usa la configuración de desarrollo y apunta a `http://localhost:3000/api`,
+que es donde escucha la API. El puerto 4200 está declarado en `CORS_ORIGIN` dentro del
+`.env` del backend; si cambias uno, cambia el otro.
+
+```bash
+npm run build    # compila a dist/ (usa environment.production.ts)
+npm test         # pruebas de la interfaz
+```
 
 **Credenciales de la demo** — usuario `ana.reyes@meridiano.local`, contraseña `Demo1234!`
 (la misma para `luis.pardo@` y `marta.leon@`).
@@ -205,6 +275,68 @@ Códigos: `BAD_REQUEST` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403),
 
 ---
 
+## Frontend
+
+Interfaz en **Angular 21** con componentes *standalone*. No hay `NgModule`: cada
+componente declara sus propias dependencias. Las rutas cargan cada pantalla de forma
+diferida, así que entrar al portal no descarga el formulario de consultas.
+
+| Ruta | Pantalla | Guard |
+|---|---|---|
+| `/login` | Acceso | `publicoGuard` |
+| `/` | Resumen de la sesión | `authGuard` |
+| `/consultas` | Listado con filtros | `authGuard` |
+| `/consultas/nueva` | Alta | `authGuard` |
+| `/consultas/:id` | Edición | `authGuard` |
+| `**` | 404 | — |
+
+### Capa de datos
+
+`core/models/api.models.ts` declara el contrato de la API: `ConsultaResumen`,
+`ConsultaDetalle`, `ConsultaPayload`, `Catalogos`, etc. **No se usa `any`** en las
+respuestas. Si el backend renombra un campo, el error aparece en compilación y no como
+un `undefined` silencioso en pantalla. Ese contrato se verificó contra la API real: el
+ciclo completo alta → lectura → edición → baja devuelve los 25 campos que el modelo
+espera.
+
+### Sesión en el cliente
+
+- El token vive en **`sessionStorage`**, no en `localStorage`. En una terminal de
+  servicio médico compartida entre turnos, la sesión debe morir al cerrar la pestaña.
+- El **interceptor** añade la cabecera `Authorization` en cada petición y, ante un
+  `401`, limpia la sesión y vuelve al login con un aviso. Como el backend invalida el
+  token anterior en cada login nuevo (sesión única), un `401` también significa "entraste
+  desde otro equipo"; ambos casos se tratan igual.
+- El `401` del propio login se excluye de esa redirección: ahí el formulario necesita
+  mostrar "usuario o contraseña incorrectos" en lugar de recargar la pantalla.
+- Un indicador evita el bucle de redirecciones cuando varias peticiones fallan a la vez.
+
+### Decisiones de diseño
+
+**Un solo componente para alta y edición.** `/consultas/nueva` y `/consultas/:id`
+montan el mismo componente; el modo se decide por la presencia del parámetro. Con dos
+formularios separados, las reglas de captura terminan divergiendo.
+
+**El IMC se calcula en el cliente.** El backend rechaza con un `400` un IMC que no
+cuadre con la talla y el peso. La pantalla lo recalcula al cambiar cualquiera de los
+dos, así que ese error no llega a producirse. El cálculo se hace con `emitEvent: false`
+para no disparar un ciclo entre los tres campos.
+
+**Tras guardar o borrar se vuelve a consultar al servidor** en lugar de modificar la
+lista en memoria. La pantalla refleja el estado real y no una suposición del cliente.
+
+**Los catálogos se piden una sola vez** con `/catalogos`, no en una llamada por combo.
+
+**El subconjunto de iconos está declarado explícitamente.** CoreUI registra cientos de
+iconos por defecto; `icons/icon-subset.ts` incluye solo los 16 que las plantillas usan.
+Añadir uno nuevo y olvidarlo en esa lista se nota en pantalla (se ve en blanco).
+
+**El payload se construye con coerción explícita.** El backend distingue "sin dato" de
+"cadena vacía", así que los campos opcionales se envían como `null` y no como `''`, y
+los `DECIMAL` que MySQL devuelve como cadena se convierten a número antes de compararlos.
+
+---
+
 ## Decisiones de diseño
 
 Las que valen la pena explicar en una revisión.
@@ -263,7 +395,7 @@ en curso y cierra el pool. Sin esto, un despliegue corta consultas a la mitad.
 ## Pruebas
 
 ```bash
-npm test
+cd backend && npm test
 ```
 
 **39 pruebas, 0 fallos.** Dos capas:
@@ -274,6 +406,17 @@ npm test
 
 Si MySQL no responde, las pruebas de integración se **omiten** en lugar de fallar, para
 que `npm test` siga siendo útil en un clon recién bajado.
+
+La interfaz se verifica con:
+
+```bash
+cd frontend && npm run build
+```
+
+La compilación corre con plantillas **estrictas**, así que un campo que no exista en el
+modelo o un método que falte en el componente rompen el build. Además, el contrato de
+datos se contrastó contra la API en ejecución: el payload que arma el formulario se
+envió de verdad y se comprobó que la respuesta devuelve los 25 campos del modelo.
 
 ---
 
@@ -289,6 +432,9 @@ que `npm test` siga siendo útil en un clon recién bajado.
   producción corresponde un logger con niveles y correlación por petición.
 - **Sin migraciones versionadas.** `schema.sql` recrea las tablas desde cero; sirve
   para desarrollo, no para evolucionar un esquema en producción.
+- **La interfaz no tiene pruebas automatizadas todavía.** Lo que está verificado es que
+  compila con plantillas estrictas y que su contrato de datos coincide con la API real.
+  Faltan *specs* de componentes y una prueba de extremo a extremo en navegador.
 
 ---
 
