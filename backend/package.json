@@ -1,0 +1,36 @@
+{
+  "name": "servicio-medico-api",
+  "version": "1.0.0",
+  "description": "API REST del Portal de Servicio Médico: autenticación corporativa (LDAP/AD + JWT) y gestión de consultas médicas sobre MySQL.",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "db:migrate": "node scripts/migrate.js"
+  },
+  "keywords": [
+    "express",
+    "ldap",
+    "jwt",
+    "mysql",
+    "stored-procedures"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "ldapts": "^7.3.1",
+    "mysql2": "^3.16.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

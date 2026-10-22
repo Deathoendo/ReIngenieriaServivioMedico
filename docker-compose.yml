@@ -1,0 +1,32 @@
+# ===========================================================================
+#  Entorno de desarrollo: MySQL 8 con el esquema y los datos sintéticos.
+#
+#  Levanta la base de datos con:      docker compose up -d
+#  Carga el esquema y los datos:      npm run db:migrate   (desde ./backend)
+#  Detiene y borra los datos:         docker compose down -v
+# ===========================================================================
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: servmed-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: servicio_medico
+      MYSQL_USER: servmed
+      MYSQL_PASSWORD: servmed
+    ports:
+      - "3307:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - servmed-data:/var/lib/mysql
+
+volumes:
+  servmed-data:
